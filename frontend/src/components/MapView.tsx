@@ -25,8 +25,10 @@ const INDIA_BOUNDARY_URL =
   'https://raw.githubusercontent.com/geohacker/india/master/state/india_state.geojson';
 
 /* ─── Tile URL builder ────────────────────────────────────────────────────────── */
+const BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api/v1';
+const HOST = BASE.replace(/\/api\/v1$/, '');
 const tileURL = (layer: string, date: string) =>
-  `http://localhost:8001/tiles/${layer}/{z}/{x}/{y}.png?date=${date}`;
+  `${HOST}/tiles/${layer}/{z}/{x}/{y}.png?date=${date}`;
 
 /* ─── AQI category → hex (for station markers) ───────────────────────────────── */
 const CAT_COLORS: Record<AQICategory, string> = AQI_CATEGORY_COLOR;
