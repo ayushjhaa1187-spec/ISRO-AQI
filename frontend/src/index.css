@@ -1,0 +1,445 @@
+/**
+ * index.css
+ * Global stylesheet for ISRO AQI & HCHO Monitor Platform.
+ * Design system: deep dark mode, glassmorphism, Inter font.
+ * AQI color variables, MapLibre container styles, animations.
+ */
+
+/* ─── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Color palette */
+  --bg-base:        #0a0e1a;
+  --bg-surface:     #111827;
+  --bg-elevated:    #1a2236;
+  --accent-blue:    #3b82f6;
+  --accent-orange:  #f97316;
+  --accent-blue-dim: rgba(59, 130, 246, 0.15);
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #475569;
+  --border-subtle:  rgba(255, 255, 255, 0.08);
+  --border-glow:    rgba(59, 130, 246, 0.3);
+
+  /* AQI Category Colors (India CPCB scale) */
+  --aqi-good:       #00e400;
+  --aqi-satisfactory: #ffff00;
+  --aqi-moderate:   #ff7e00;
+  --aqi-poor:       #ff0000;
+  --aqi-very-poor:  #8f3f97;
+  --aqi-severe:     #7e0023;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Spacing */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  16px;
+  --radius-xl:  24px;
+
+  /* Transitions */
+  --transition-fast:   0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow:   0.4s ease;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ─── Custom Scrollbar ──────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+/* ─── Glassmorphism Utility Classes ─────────────────────────────────────────── */
+.glass-panel {
+  background: rgba(17, 24, 39, 0.82);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.4),
+    0 1px 0px rgba(255, 255, 255, 0.05) inset;
+}
+
+.glass-panel-sm {
+  background: rgba(17, 24, 39, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+}
+
+.glass-header {
+  background: rgba(10, 14, 26, 0.88);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* ─── MapLibre Map Container ─────────────────────────────────────────────────── */
+.map-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.maplibregl-map {
+  width: 100% !important;
+  height: 100% !important;
+  font-family: var(--font-family) !important;
+}
+
+/* MapLibre control buttons */
+.maplibregl-ctrl-group {
+  background: rgba(17, 24, 39, 0.88) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+.maplibregl-ctrl-group button {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+.maplibregl-ctrl-group button:hover {
+  background: rgba(59, 130, 246, 0.15) !important;
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* MapLibre popup */
+.maplibregl-popup-content {
+  background: rgba(17, 24, 39, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 0 !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-family) !important;
+  min-width: 240px;
+}
+
+.maplibregl-popup-tip {
+  border-top-color: rgba(17, 24, 39, 0.95) !important;
+}
+
+.maplibregl-popup-close-button {
+  color: var(--text-secondary) !important;
+  font-size: 20px !important;
+  padding: 6px 10px !important;
+  line-height: 1 !important;
+  top: 4px !important;
+  right: 4px !important;
+}
+
+.maplibregl-popup-close-button:hover {
+  color: var(--text-primary) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 4px !important;
+}
+
+/* Attribution */
+.maplibregl-ctrl-attrib {
+  background: rgba(10, 14, 26, 0.7) !important;
+  color: var(--text-muted) !important;
+  font-size: 10px !important;
+}
+
+.maplibregl-ctrl-attrib a { color: var(--text-secondary) !important; }
+
+/* ─── Animations ─────────────────────────────────────────────────────────────── */
+@keyframes pulse-ring {
+  0%   { transform: scale(1); opacity: 0.8; }
+  70%  { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.15); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.anim-fade-in        { animation: fadeIn 0.3s ease forwards; }
+.anim-fade-in-up     { animation: fadeInUp 0.35s ease forwards; }
+.anim-slide-in-left  { animation: slideInLeft 0.3s ease forwards; }
+
+/* Station marker pulse */
+.station-pulse {
+  position: relative;
+  display: inline-block;
+}
+
+.station-pulse::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: inherit;
+  animation: pulse-ring 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+/* Layer hover transitions */
+.layer-item {
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+.layer-item:hover {
+  background: rgba(59, 130, 246, 0.08);
+  transform: translateX(2px);
+}
+
+/* ─── AQI Badge ──────────────────────────────────────────────────────────────── */
+.aqi-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ─── Toggle Switch ──────────────────────────────────────────────────────────── */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  transition: var(--transition-normal);
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 14px; width: 14px;
+  left: 2px; bottom: 2px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  transition: var(--transition-normal);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(16px);
+  background: white;
+}
+
+/* ─── Range Input ────────────────────────────────────────────────────────────── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-elevated);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  cursor: pointer;
+  transition: box-shadow var(--transition-fast);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.25);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+}
+
+/* ─── Buttons ─────────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-sm);
+}
+
+.btn-icon {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  padding: 8px;
+  border-radius: var(--radius-sm);
+}
+
+.btn-icon:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: var(--accent-blue);
+}
+
+.btn-primary {
+  background: var(--accent-blue);
+  color: white;
+  padding: 8px 20px;
+  font-size: 14px;
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+}
+
+/* ─── Loading shimmer ─────────────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface) 25%,
+    var(--bg-elevated) 50%,
+    var(--bg-surface) 75%
+  );
+  background-size: 200% auto;
+  animation: shimmer 1.5s linear infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ─── No data overlay ─────────────────────────────────────────────────────────── */
+.no-data-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(17, 24, 39, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: 16px 24px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 10;
+  animation: fadeIn 0.3s ease;
+}
+
+/* ─── Typography helpers ──────────────────────────────────────────────────────── */
+.text-xs  { font-size: 11px; }
+.text-sm  { font-size: 13px; }
+.text-md  { font-size: 15px; }
+.text-lg  { font-size: 18px; }
+.text-xl  { font-size: 22px; }
+.text-2xl { font-size: 28px; }
+
+.text-primary   { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted     { color: var(--text-muted); }
+.text-accent    { color: var(--accent-blue); }
+.text-orange    { color: var(--accent-orange); }
+
+.font-medium   { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold     { font-weight: 700; }
+
+/* ─── Flex / Layout helpers ──────────────────────────────────────────────────── */
+.flex         { display: flex; }
+.flex-col     { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-4  { gap: 4px; }
+.gap-8  { gap: 8px; }
+.gap-12 { gap: 12px; }
+
+/* ─── Responsive ──────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .hide-mobile { display: none !important; }
+  .glass-panel { border-radius: var(--radius-md); }
+}

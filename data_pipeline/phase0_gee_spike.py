@@ -1,16 +1,24 @@
 import ee
 import geemap
 import os
+import json, os
 
-# To avoid interactive prompt hanging during execution by an agent, 
-# we rely on the user having authenticated, or we'll print a message.
+# ── Authentication ────────────────────────────────────────────────────────────
+# Uses the downloaded Service Account key so the pipeline runs headlessly.
+SERVICE_ACCOUNT_KEY = os.path.join(
+    os.path.dirname(__file__), 'gee_service_account.json'
+)
 try:
-    ee.Initialize()
+    credentials = ee.ServiceAccountCredentials(
+        email='earth-engine-agent@divine-display-475706-u3.iam.gserviceaccount.com',
+        key_file=SERVICE_ACCOUNT_KEY
+    )
+    ee.Initialize(credentials=credentials, project='divine-display-475706-u3')
+    print("Earth Engine initialized via Service Account ✓")
 except Exception as e:
     print(f"Failed to initialize Earth Engine: {e}")
-    print("Please run the following command in your terminal to authenticate:")
-    print("earthengine authenticate")
     exit(1)
+
 
 # Define India bounding box roughly (min_lon, min_lat, max_lon, max_lat)
 india_roi = ee.Geometry.Rectangle([68.1, 6.7, 97.4, 35.5])
