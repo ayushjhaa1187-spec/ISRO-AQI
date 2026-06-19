@@ -117,14 +117,33 @@ app = FastAPI(
 # Middleware
 # ---------------------------------------------------------------------------
 
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS Custom Middleware to allow any origin dynamically (handles credentials correctly)
+@app.middleware("http")
+async def custom_cors_middleware(request: Request, call_next):
+    origin = request.headers.get("origin")
+    
+    if request.method == "OPTIONS":
+        response = Response(status_code=204)
+        if origin:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, X-Process-Time-Ms"
+        else:
+            response.headers["Access-Control-Allow-Origin"] = "*"
+        return response
+        
+    response = await call_next(request)
+    
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, X-Process-Time-Ms"
+    else:
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        
+    return response
 
 # GZip compression for large GeoJSON responses
 app.add_middleware(GZipMiddleware, minimum_size=1000)
