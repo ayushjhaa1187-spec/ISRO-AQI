@@ -5,7 +5,8 @@
  * Uses glass-header CSS class for backdrop blur effect.
  */
 
-import React, { useState } from 'react';
+import React from 'react';
+import { useMapStore } from '../store/useMapStore';
 
 interface NavItem {
   label: string;
@@ -21,7 +22,8 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 const Header: React.FC = () => {
-  const [activeNav, setActiveNav] = useState('Map');
+  const activeNav = useMapStore((s) => s.activeNav);
+  const setActiveNav = useMapStore((s) => s.setActiveNav);
 
   return (
     <header

@@ -85,15 +85,17 @@ const TimeControl: React.FC = () => {
     if (isAnimating) {
       intervalRef.current = setInterval(() => {
         const store = useMapStore.getState();
-        const dts   = store.availableDates.length > 0
-          ? store.availableDates
-          : [store.selectedDate];
-        const idx   = dts.indexOf(store.selectedDate);
-        if (idx < dts.length - 1) {
-          store.setSelectedDate(dts[idx + 1]);
+        if (store.availableDates.length > 0) {
+          const dts = store.availableDates;
+          const idx = dts.indexOf(store.selectedDate);
+          if (idx < dts.length - 1) {
+            store.setSelectedDate(dts[idx + 1]);
+          } else {
+            store.setSelectedDate(dts[0]);
+          }
         } else {
-          // Loop back to start
-          store.setSelectedDate(dts[0]);
+          // Fallback: just step date forward by 1
+          store.stepDate(1);
         }
       }, 1000 / animationSpeed);
     } else {

@@ -11,6 +11,9 @@ import MapView from './components/MapView';
 import LayerPanel from './components/LayerPanel';
 import TimeControl from './components/TimeControl';
 import Legend from './components/Legend';
+import EvaluationDashboard from './components/EvaluationDashboard';
+import StationsDashboard from './components/StationsDashboard';
+import ExploreDashboard from './components/ExploreDashboard';
 
 const App: React.FC = () => {
   return (
@@ -40,6 +43,15 @@ const App: React.FC = () => {
 
         {/* ── Floating: Time control (bottom-center) ────────────────────────── */}
         <TimeControl />
+
+        {/* ── Floating: Evaluation Dashboard (modal) ────────────────────────── */}
+        <EvaluationDashboard />
+        
+        {/* ── Floating: Stations Dashboard (modal) ────────────────────────── */}
+        <StationsDashboard />
+        
+        {/* ── Floating: Explore Dashboard (modal) ────────────────────────── */}
+        <ExploreDashboard />
       </div>
     </div>
   );

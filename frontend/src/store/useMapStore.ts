@@ -17,6 +17,7 @@ interface MapState {
   showHotspots: boolean;
   showWind: boolean;
   availableDates: string[];        // sorted list populated from API
+  activeNav: string;
 
   // Actions
   setSelectedDate: (date: string) => void;
@@ -27,6 +28,7 @@ interface MapState {
   setShowHotspots: (val: boolean) => void;
   setShowWind: (val: boolean) => void;
   setAvailableDates: (dates: string[]) => void;
+  setActiveNav: (nav: string) => void;
 
   /** Advance date by `delta` days (respects availableDates bounds) */
   stepDate: (delta: 1 | -1) => void;
@@ -48,6 +50,7 @@ export const useMapStore = create<MapState>((set, get) => ({
   showHotspots:   true,
   showWind:       false,
   availableDates: [],
+  activeNav:      'Map',
 
   setSelectedDate:   (date)  => set({ selectedDate: date }),
   setSelectedLayer:  (layer) => set({ selectedLayer: layer }),
@@ -57,6 +60,7 @@ export const useMapStore = create<MapState>((set, get) => ({
   setShowHotspots:   (val)   => set({ showHotspots: val }),
   setShowWind:       (val)   => set({ showWind: val }),
   setAvailableDates: (dates) => set({ availableDates: dates }),
+  setActiveNav:      (nav)   => set({ activeNav: nav }),
 
   stepDate: (delta) => {
     const { selectedDate, availableDates } = get();

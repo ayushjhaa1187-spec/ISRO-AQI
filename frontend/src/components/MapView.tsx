@@ -20,6 +20,11 @@ import { apiClient } from '../api/client';
 import { buildAQIPopupHTML, AQI_CATEGORY_COLOR } from './AQIPopup';
 import type { AQIResponse, AQICategory, StationSummary } from '../types';
 
+import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder';
+import '@maplibre/maplibre-gl-geocoder/lib/maplibre-gl-geocoder.css';
+import { buildAQIPopupHTML, AQI_CATEGORY_COLOR } from './AQIPopup';
+import type { AQIResponse, AQICategory, StationSummary } from '../types';
+
 /* ─── India boundary GeoJSON URL (public domain) ─────────────────────────────── */
 const INDIA_BOUNDARY_URL =
   'https://raw.githubusercontent.com/geohacker/india/master/state/india_state.geojson';
@@ -76,6 +81,54 @@ const MapView: React.FC = () => {
     /* ── Navigation controls ──────────────────────────────────────────────── */
     map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
+
+    /* ── Locate Me control ────────────────────────────────────────────────── */
+    map.addControl(
+      new maplibregl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: true,
+        showUserHeading: true
+      }),
+      'top-right'
+    );
+
+    /* ── Geocoder (City Search) ───────────────────────────────────────────── */
+    const geocoderApi = {
+      forwardGeocode: async (config: any) => {
+        const features = [];
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(config.query)}&format=geojson&countrycodes=in`);
+          const data = await res.json();
+          for (const feature of data.features) {
+            let center = [
+              feature.bbox[0] + (feature.bbox[2] - feature.bbox[0]) / 2,
+              feature.bbox[1] + (feature.bbox[3] - feature.bbox[1]) / 2
+            ];
+            features.push({
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: center },
+              place_name: feature.properties.display_name,
+              properties: feature.properties,
+              text: feature.properties.display_name,
+              place_type: ['place'],
+              center: center
+            });
+          }
+        } catch (e) {
+          console.error("Geocoding failed", e);
+        }
+        return { features };
+      }
+    };
+    
+    // @ts-ignore
+    const geocoder = new MaplibreGeocoder(geocoderApi, { 
+      maplibregl: maplibregl,
+      placeholder: 'Search for a city...',
+      marker: false,
+      flyTo: { zoom: 10, speed: 1.2 }
+    });
+    map.addControl(geocoder, 'top-left');
 
     map.on('load', () => {
       /* ── India boundary ─────────────────────────────────────────────────── */
