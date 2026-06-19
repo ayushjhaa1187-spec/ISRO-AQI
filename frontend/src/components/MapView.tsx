@@ -21,7 +21,7 @@ import { buildAQIPopupHTML, AQI_CATEGORY_COLOR } from './AQIPopup';
 import type { AQIResponse, AQICategory, StationSummary } from '../types';
 
 import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder';
-import '@maplibre/maplibre-gl-geocoder/lib/maplibre-gl-geocoder.css';
+import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
 
 /* ─── India boundary GeoJSON URL (public domain) ─────────────────────────────── */
 const INDIA_BOUNDARY_URL =
