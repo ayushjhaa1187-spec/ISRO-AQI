@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import logging
 import random
+import requests
+import time
 from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional
 
@@ -56,8 +58,58 @@ _MOCK_STATIONS: List[dict] = [
 _STATION_MAP = {s["id"]: s for s in _MOCK_STATIONS}
 
 
+# ---------------------------------------------------------------------------
+# Live WAQI Fetcher with Cache
+# ---------------------------------------------------------------------------
+_STATION_AQI_CACHE = {}
+_CACHE_TTL = 300  # 5 minutes
+
+_STATION_FEED_MAP = {
+    "DL001": "delhi/anand-vihar",
+    "DL002": "delhi/ito",
+    "DL003": "delhi/r.-k.-puram",
+    "DL004": "delhi/punjabi-bagh",
+    "MH001": "mumbai/bandra",
+    "MH002": "mumbai/chembur",
+    "MH003": "pune",
+    "TN001": "chennai/alandur",
+    "TN002": "chennai/manali",
+    "WB001": "kolkata/jadavpur",
+    "WB002": "kolkata/rabindra-sarani",
+    "TS001": "hyderabad",
+    "KA001": "bangalore",
+    "UP001": "lucknow",
+    "GJ001": "ahmedabad",
+}
+
+def _fetch_live_aqi(station_id: str, fallback_aqi: float) -> float:
+    now = time.time()
+    cache_entry = _STATION_AQI_CACHE.get(station_id)
+    if cache_entry and (now - cache_entry["timestamp"] < _CACHE_TTL):
+        return cache_entry["aqi"]
+    
+    feed_path = _STATION_FEED_MAP.get(station_id)
+    if not feed_path:
+        return fallback_aqi
+        
+    try:
+        url = f"https://api.waqi.info/feed/{feed_path}/?token=demo"
+        r = requests.get(url, timeout=2.0)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("status") == "ok":
+                aqi = float(data["data"]["aqi"])
+                _STATION_AQI_CACHE[station_id] = {"aqi": aqi, "timestamp": now}
+                return aqi
+    except Exception as e:
+        logger.warning(f"Failed to fetch live AQI for station {station_id}: {e}")
+        
+    return fallback_aqi
+
+
 def _station_to_feature(s: dict) -> StationFeature:
     now = datetime.now(tz=timezone.utc)
+    live_aqi = _fetch_live_aqi(s["id"], s["last_aqi"])
     return StationFeature(
         type="Feature",
         geometry={"type": "Point", "coordinates": [s["lon"], s["lat"]]},
@@ -69,14 +121,14 @@ def _station_to_feature(s: dict) -> StationFeature:
             city=s["city"],
             state=s["state"],
             has_timeseries=True,
-            last_aqi=s["last_aqi"],
+            last_aqi=live_aqi,
             last_updated=now - timedelta(hours=random.randint(1, 6)),
         ),
     )
 
 
 # ---------------------------------------------------------------------------
-# Mock time-series generator
+# Mock time-series generator (anchored to live AQI)
 # ---------------------------------------------------------------------------
 
 def _generate_timeseries(
@@ -86,10 +138,10 @@ def _generate_timeseries(
 ) -> List[TimeseriesPoint]:
     """
     Generate synthetic AQI time-series data with realistic diurnal variation
-    and a random-walk trend.
+    and a random-walk trend, anchored to current live values.
     """
     rng = random.Random(hash(station["id"]))
-    base_aqi = station["last_aqi"]
+    base_aqi = _fetch_live_aqi(station["id"], station["last_aqi"])
     points: List[TimeseriesPoint] = []
     now = datetime.now(tz=timezone.utc).replace(minute=0, second=0, microsecond=0)
 
@@ -154,12 +206,16 @@ async def get_stations(
         stations = [s for s in stations if state.lower() in s["state"].lower()]
     if city:
         stations = [s for s in stations if city.lower() in s["city"].lower()]
-    if min_aqi is not None:
-        stations = [s for s in stations if s["last_aqi"] is not None and s["last_aqi"] >= min_aqi]
-    if max_aqi is not None:
-        stations = [s for s in stations if s["last_aqi"] is not None and s["last_aqi"] <= max_aqi]
 
-    features = [_station_to_feature(s) for s in stations]
+    features = []
+    for s in stations:
+        feature = _station_to_feature(s)
+        live_aqi = feature.properties.last_aqi
+        if min_aqi is not None and (live_aqi is None or live_aqi < min_aqi):
+            continue
+        if max_aqi is not None and (live_aqi is None or live_aqi > max_aqi):
+            continue
+        features.append(feature)
     return StationFeatureCollection(
         type="FeatureCollection",
         features=features,

@@ -57,9 +57,15 @@ def _generate_fire_points(ref_date: date) -> List[FirePoint]:
     """
     Generate a slightly-randomised set of fire points for a given date.
     Uses the date as a seed so results are reproducible.
+    Also dynamically incorporates real-time CPCB station AQI observations:
+    if station AQI > 100, adds correlated agricultural fire detections.
     """
+    from api.v1.stations import _fetch_live_aqi
+
     rng = random.Random(ref_date.toordinal())
     points: List[FirePoint] = []
+
+    # 1. Base fire points (climatology/historical mock)
     for bp in _BASE_FIRE_POINTS:
         # Randomly skip ~20% of points to simulate daily variation
         if rng.random() < 0.2:
@@ -75,6 +81,42 @@ def _generate_fire_points(ref_date: date) -> List[FirePoint]:
                 satellite=bp["satellite"],
             )
         )
+
+    # 2. Dynamic correlated fire points based on live AQI
+    # We will check key cities and add agricultural/biomass burning fires around them
+    # if the live AQI is elevated (>100).
+    regions = [
+        # (station_id, fallback_aqi, name, lat_min, lat_max, lon_min, lon_max)
+        ("DL001", 278.0, "Punjab/Haryana", 29.8, 31.5, 74.0, 76.8),
+        ("UP001", 230.0, "Uttar Pradesh", 26.2, 28.2, 79.5, 82.0),
+        ("GJ001", 120.0, "Gujarat", 21.8, 23.8, 71.0, 73.2),
+        ("KA001", 107.0, "Karnataka", 13.5, 15.5, 74.5, 76.5),
+        ("MH001", 98.0, "Maharashtra", 18.0, 20.0, 74.0, 76.0),
+    ]
+
+    for station_id, fallback, region_name, lat_min, lat_max, lon_min, lon_max in regions:
+        # Get live AQI
+        live_aqi = _fetch_live_aqi(station_id, fallback)
+        if live_aqi > 100:
+            # Scale count of fires: e.g. 1 fire per 15 AQI points above 100 (cap at 20)
+            extra_count = min(20, int((live_aqi - 100) / 15) + 2)
+            for _ in range(extra_count):
+                lat = round(rng.uniform(lat_min, lat_max), 6)
+                lon = round(rng.uniform(lon_min, lon_max), 6)
+                # Scale FRP with AQI: higher AQI = higher fire radiative power
+                frp = round(15.0 + (live_aqi - 100) * rng.uniform(0.15, 0.4), 1)
+                confidence = "high" if frp > 40 else "nominal"
+                points.append(
+                    FirePoint(
+                        lat=lat,
+                        lon=lon,
+                        frp=frp,
+                        confidence=confidence,
+                        date=ref_date,
+                        satellite=rng.choice(["VIIRS", "MODIS"]),
+                    )
+                )
+
     return points
 
 

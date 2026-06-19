@@ -214,9 +214,65 @@ async def get_hotspots(
     min_level = _sig_order[min_significance]
 
     if settings.DEV_MODE:
+        # Generate dynamic hotspots based on live AQI readings
+        from api.v1.stations import _fetch_live_aqi
+
+        regions_config = [
+            {
+                "id": "DL001", "fallback": 278.0, "source_region": "Punjab",
+                "lat": 30.25, "lon": 76.80, "width": 0.5,
+            },
+            {
+                "id": "DL001", "fallback": 278.0, "source_region": "Haryana",
+                "lat": 28.90, "lon": 77.50, "width": 0.4,
+            },
+            {
+                "id": "UP001", "fallback": 230.0, "source_region": "Bihar",
+                "lat": 25.60, "lon": 85.10, "width": 0.3,
+            },
+            {
+                "id": "GJ001", "fallback": 120.0, "source_region": "Gujarat",
+                "lat": 22.30, "lon": 73.20, "width": 0.35,
+            },
+            {
+                "id": "KA001", "fallback": 107.0, "source_region": "Karnataka",
+                "lat": 15.50, "lon": 75.00, "width": 0.25,
+            },
+        ]
+
+        dynamic_hotspots = []
+        for r in regions_config:
+            aqi = _fetch_live_aqi(r["id"], r["fallback"])
+            
+            # Scale HCHO vertical column density with AQI (e.g. 2e-16 to 10e-16)
+            mean_hcho = 2.0e-16 + (aqi / 300.0) * 8.0e-16
+            
+            # Scale fire count with AQI
+            fire_count = int(aqi / 12.0)
+            
+            # Determine significance level
+            if aqi > 250:
+                sig = "extreme"
+            elif aqi > 150:
+                sig = "high"
+            elif aqi > 80:
+                sig = "moderate"
+            else:
+                sig = "low"
+                
+            dynamic_hotspots.append({
+                "lat": r["lat"],
+                "lon": r["lon"],
+                "width": r["width"],
+                "mean_hcho": mean_hcho,
+                "significance": sig,
+                "fire_count": fire_count,
+                "source_region": r["source_region"],
+            })
+
         # Filter by significance and limit
         filtered = [
-            h for h in _MOCK_HOTSPOTS
+            h for h in dynamic_hotspots
             if _sig_order[SignificanceLevel(h["significance"])] >= min_level
         ][:limit]
 

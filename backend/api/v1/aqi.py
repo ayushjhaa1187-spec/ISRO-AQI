@@ -11,6 +11,8 @@ Routes:
 from __future__ import annotations
 
 import logging
+import requests
+import time
 from datetime import date, timedelta
 from typing import Optional
 
@@ -37,6 +39,38 @@ _MOCK_STATIONS = [
     (22.5726, 88.3639, 60.0,  140.0, 65.0),   # Kolkata
     (17.3850, 78.4867, 35.0,  80.0,  40.0),   # Hyderabad
 ]
+
+
+def _live_aqi_for_point(lat: float, lon: float) -> Optional[dict]:
+    try:
+        url = f"https://api.waqi.info/feed/geo:{lat};{lon}/?token=demo"
+        r = requests.get(url, timeout=3.0)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("status") == "ok":
+                feed_data = data["data"]
+                aqi_val = float(feed_data["aqi"])
+                
+                # Fetch dominant pollutant
+                dom = str(feed_data.get("dominentpol", "PM2.5")).upper()
+                if dom == "PM25":
+                    dom = "PM2.5"
+                elif not dom:
+                    dom = "PM2.5"
+                
+                # Compute category & advice
+                category, color_hex, health_advice = aqi_to_category(aqi_val)
+                
+                return {
+                    "value": aqi_val,
+                    "category": category,
+                    "color_hex": color_hex,
+                    "dominant_pollutant": dom,
+                    "health_advice": health_advice,
+                }
+    except Exception as e:
+        logger.warning(f"Failed to query live geolocated AQI for {lat},{lon}: {e}")
+    return None
 
 
 def _mock_aqi_for_point(lat: float, lon: float, query_date: date) -> dict:
@@ -146,7 +180,11 @@ async def get_aqi_point(
     query_date = date if date is not None else _yesterday()
 
     if settings.DEV_MODE:
-        result = _mock_aqi_for_point(lat, lon, query_date)
+        live_result = _live_aqi_for_point(lat, lon)
+        if live_result is not None:
+            result = live_result
+        else:
+            result = _mock_aqi_for_point(lat, lon, query_date)
     else:
         from services.raster import get_cog_path, query_cog_point_safe
 
