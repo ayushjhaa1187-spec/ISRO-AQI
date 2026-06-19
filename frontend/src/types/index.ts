@@ -78,21 +78,16 @@ export interface StationsResponse {
 
 /* ─── Timeseries Point ────────────────────────────────────────────────────────── */
 export interface TimeseriesPoint {
-  timestamp: string;               // ISO datetime string
-  aqi: number | null;
-  pm25: number | null;
-  pm10: number | null;
-  no2: number | null;
-  so2: number | null;
-  co: number | null;
-  o3: number | null;
-  hcho: number | null;
+  datetime: string;               // ISO datetime string
+  observed: number | null;        // Observed AQI value
+  predicted: number | null;       // ML-predicted AQI value
+  pollutant: string;              // e.g. "AQI"
 }
 
 export interface TimeseriesResponse {
   station_id: string;
   station_name: string;
-  range: { start: string; end: string };
+  range_days: number;
   data: TimeseriesPoint[];
 }
 

@@ -82,12 +82,8 @@ const LayerPanel: React.FC = () => {
     <div
       className="glass-panel anim-slide-in-left"
       style={{
-        position:  'absolute',
-        top:       '16px',
-        left:      '16px',
-        width:     '220px',
+        width:     '100%',
         padding:   '14px 16px',
-        zIndex:    50,
         display:   'flex',
         flexDirection: 'column',
         gap:       '0',

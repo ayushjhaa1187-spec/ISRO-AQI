@@ -87,12 +87,8 @@ const Legend: React.FC = () => {
     <div
       className="glass-panel-sm anim-fade-in"
       style={{
-        position:  'absolute',
-        bottom:    '130px',
-        left:      '16px',
-        minWidth:  '190px',
+        width:     '100%',
         padding:   '12px 14px',
-        zIndex:    50,
       }}
     >
       {/* ── Title ───────────────────────────────────────────────────────────── */}

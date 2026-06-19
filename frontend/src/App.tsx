@@ -35,11 +35,28 @@ const App: React.FC = () => {
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         <MapView />
 
-        {/* ── Floating: Layer panel (left side) ─────────────────────────────── */}
-        <LayerPanel />
-
-        {/* ── Floating: Legend (bottom-left) ────────────────────────────────── */}
-        <Legend />
+        {/* ── Floating: Left Sidebar (Layer Panel & Legend stacked) ────────── */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '70px',
+            left: '16px',
+            bottom: '16px',
+            width: '220px',
+            zIndex: 50,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            pointerEvents: 'none',
+          }}
+        >
+          <div style={{ pointerEvents: 'auto', flexShrink: 0 }}>
+            <LayerPanel />
+          </div>
+          <div style={{ pointerEvents: 'auto', flex: 1, minHeight: 0, overflowY: 'auto' }}>
+            <Legend />
+          </div>
+        </div>
 
         {/* ── Floating: Time control (bottom-center) ────────────────────────── */}
         <TimeControl />

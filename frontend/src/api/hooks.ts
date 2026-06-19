@@ -15,6 +15,7 @@ import type {
   AvailableDatesResponse,
   FireResponse,
   LayerName,
+  AQICategory,
 } from '../types';
 
 /* ─── Query Key Factory ───────────────────────────────────────────────────────── */
@@ -75,6 +76,15 @@ export function useHotspots(start: string, end: string) {
   });
 }
 
+const getAQICategory = (aqi: number): AQICategory => {
+  if (aqi <= 50) return 'Good';
+  if (aqi <= 100) return 'Satisfactory';
+  if (aqi <= 200) return 'Moderate';
+  if (aqi <= 300) return 'Poor';
+  if (aqi <= 400) return 'Very Poor';
+  return 'Severe';
+};
+
 /* ─── useStations ─────────────────────────────────────────────────────────────── */
 /**
  * Fetches the list of all monitoring stations with their current AQI.
@@ -83,8 +93,29 @@ export function useStations() {
   return useQuery<StationsResponse>({
     queryKey: queryKeys.stations(),
     queryFn: async () => {
-      const { data } = await apiClient.get<StationsResponse>('/stations');
-      return data;
+      const { data } = await apiClient.get<any>('/stations');
+      const stations = (data.features || []).map((f: any) => {
+        const props = f.properties;
+        const coords = f.geometry?.coordinates || [0, 0];
+        const aqiVal = props.last_aqi !== undefined ? props.last_aqi : props.aqi;
+        return {
+          id: props.id || '',
+          name: props.name || '',
+          city: props.city || '',
+          state: props.state || '',
+          latitude: props.lat !== undefined ? props.lat : coords[1],
+          longitude: props.lon !== undefined ? props.lon : coords[0],
+          aqi: aqiVal,
+          category: props.category || (aqiVal !== null && aqiVal !== undefined ? getAQICategory(aqiVal) : null),
+          dominant_pollutant: props.dominant_pollutant || 'PM2.5',
+          last_updated: props.last_updated || new Date().toISOString(),
+          is_active: props.is_active !== undefined ? props.is_active : true,
+        };
+      });
+      return {
+        stations,
+        total: data.total || stations.length,
+      };
     },
     staleTime: 5 * 60 * 1_000,
     retry: 2,
@@ -121,7 +152,7 @@ export function useAvailableDates(layer: LayerName) {
     queryKey: queryKeys.availableDates(layer),
     queryFn: async () => {
       const { data } = await apiClient.get<AvailableDatesResponse>(
-        '/tiles/dates',
+        '/meta/dates',
         { params: { layer } }
       );
       return data;
@@ -140,7 +171,7 @@ export function useFirePoints(date: string) {
   return useQuery<FireResponse>({
     queryKey: queryKeys.firePoints(date),
     queryFn: async () => {
-      const { data } = await apiClient.get<FireResponse>('/fire/points', {
+      const { data } = await apiClient.get<FireResponse>('/fire', {
         params: { date },
       });
       return data;
